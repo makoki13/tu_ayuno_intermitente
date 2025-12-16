@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; 
 
 void main() {
   runApp(MyApp());
@@ -40,10 +41,78 @@ class _MyHomePageState extends State<MyHomePage> {
   Timer? _timer;
   EstadoAyuno _estadoActual = EstadoAyuno.none;
 
+  // Claves para SharedPreferences
+  static const String _prefsKeyEstado = 'estado_actual';
+  static const String _prefsKeyTiempo = 'tiempo_transcurrido_ms';
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEstadoDesdeSharedPreferences(); // Cargar estado al iniciar
+  }
+
+  Future<void> _cargarEstadoDesdeSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Recuperar el estado
+    String estadoStr = prefs.getString(_prefsKeyEstado) ?? 'none';
+    _estadoActual = _stringToEstadoAyuno(estadoStr);
+
+    // Recuperar el tiempo transcurrido en milisegundos
+    int tiempoMs = prefs.getInt(_prefsKeyTiempo) ?? 0;
+    _elapsedTime = Duration(milliseconds: tiempoMs);
+
+    // Si el estado era Fasting o Feeding, se debe reanudar el temporizador
+    if (_estadoActual != EstadoAyuno.none) {
+      _startTimer(); // Iniciar el temporizador sin reiniciar _elapsedTime
+    }
+
+    // Llama a setState para actualizar la UI con los valores cargados
+    setState(() {});
+  }
+
+   EstadoAyuno _stringToEstadoAyuno(String str) {
+    switch (str) {
+      case 'fasting':
+        return EstadoAyuno.fasting;
+      case 'feeding':
+        return EstadoAyuno.feeding;
+      case 'none':
+      default:
+        return EstadoAyuno.none;
+    }
+  }
+
+  // Función auxiliar para convertir EstadoAyuno a String
+  String _estadoAyunoToString(EstadoAyuno estado) {
+    switch (estado) {
+      case EstadoAyuno.fasting:
+        return 'fasting';
+      case EstadoAyuno.feeding:
+        return 'feeding';
+      case EstadoAyuno.none:
+        return 'none';
+    }
+  }
+
+  // Método para guardar estado y tiempo
+  Future<void> _guardarEstadoEnSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKeyEstado, _estadoAyunoToString(_estadoActual));
+    await prefs.setInt(_prefsKeyTiempo, _elapsedTime.inMilliseconds);
+  }
+
   void _startTimer() {
     _stopTimer();
 
-    _elapsedTime = Duration.zero;
+    /* _elapsedTime = Duration.zero;
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _elapsedTime += Duration(seconds: 1);
+      });
+    }); */
+
+    // IMPORTANTE: No reiniciar _elapsedTime aquí, se gestiona al inicio o al confirmar acción
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         _elapsedTime += Duration(seconds: 1);
@@ -67,18 +136,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Función auxiliar para encapsular la lógica de inicio de Fasting
   void _realizarStartFasting() {
+    _elapsedTime = Duration.zero; // Reiniciar tiempo al iniciar Fasting
+
     _startTimer();
     setState(() {
       _estadoActual = EstadoAyuno.fasting;
     });
+
+    _guardarEstadoEnSharedPreferences(); // Guardar estado
   }
 
   // Función auxiliar para encapsular la lógica de inicio de Feeding
   void _realizarStartFeeding() {
+    _elapsedTime = Duration.zero; // Reiniciar tiempo al iniciar Feeding
+
     _startTimer();
     setState(() {
       _estadoActual = EstadoAyuno.feeding;
     });
+
+    _guardarEstadoEnSharedPreferences(); // Guardar estado
   }
 
   // Función para mostrar el diálogo de confirmación
@@ -86,7 +163,6 @@ class _MyHomePageState extends State<MyHomePage> {
     String texto = '';
 
     if (_estadoActual == EstadoAyuno.none) {
-      //Navigator.of(context).pop(); // Cierra el diálogo
       onConfirmar();
       return;
     }
