@@ -117,6 +117,8 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _elapsedTime += Duration(seconds: 1);
       });
+
+      _guardarEstadoEnSharedPreferences(); //Cada segundo
     });
   }
 
@@ -143,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _estadoActual = EstadoAyuno.fasting;
     });
 
-    _guardarEstadoEnSharedPreferences(); // Guardar estado
+    //_guardarEstadoEnSharedPreferences(); // Guardar estado
   }
 
   // Función auxiliar para encapsular la lógica de inicio de Feeding
@@ -155,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _estadoActual = EstadoAyuno.feeding;
     });
 
-    _guardarEstadoEnSharedPreferences(); // Guardar estado
+    //_guardarEstadoEnSharedPreferences(); // Guardar estado
   }
 
   // Función para mostrar el diálogo de confirmación
@@ -223,6 +225,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _stopTimer();
+    _guardarEstadoEnSharedPreferences(); // Tal vez no sea necesario de momento si se guarda cada segundo
     super.dispose();
   }
 
