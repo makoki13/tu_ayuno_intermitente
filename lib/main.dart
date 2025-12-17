@@ -116,6 +116,22 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<void> _resetearEstado() async {
+    _stopTimer(); // Detener el temporizador actual
+
+    // Resetear variables locales
+    _estadoActual = EstadoAyuno.none;
+    _ultimoCambioTimestamp = null;
+
+    // Limpiar datos persistentes
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefsKeyEstado);
+    await prefs.remove(_prefsKeyTimestamp);
+
+    // Actualizar la UI
+    setState(() {});
+  }
+
   void _startTimer() {
     _stopTimer(); // Detiene cualquier temporizador anterior
 
@@ -205,6 +221,35 @@ class _MyHomePageState extends State<MyHomePage> {
                 onConfirmar(); // Ejecuta la acción de inicio
               },
               child: Text('Confirmar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _mostrarDialogoConfirmacionReset() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmar Reset'),
+          content: Text(
+            '¿Estás seguro de que quieres resetear la aplicación? Se perderán los datos actuales.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cierra el diálogo
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cierra el diálogo
+                _resetearEstado(); // Ejecuta la acción de reseteo
+              },
+              child: Text('Resetear'),
             ),
           ],
         );
@@ -310,6 +355,18 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Text('Start Feeding', style: TextStyle(fontSize: 18)),
                 ),
               ],
+            ),
+            SizedBox(height: 20), // Espacio adicional antes del botón de reset
+            ElevatedButton(
+              onPressed:
+                  _mostrarDialogoConfirmacionReset, // Llama al diálogo de confirmación
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Colors.grey[600], // Color gris para diferenciarlo
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              ),
+              child: Text('Resetear', style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

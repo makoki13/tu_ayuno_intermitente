@@ -1,0 +1,10 @@
+* UI Mejorada: Diseño más pulido o gráficos.
+(0.3)
+*   Historial: Almacenar sesiones de ayuno/comida pasadas.
+    Añadir botonera inferior para Historial y futuras opciones.
+(1.0)
+* Metas: Permitir al usuario configurar duraciones objetivo.
+(1.1)
+* Notificaciones: Recordatorios para iniciar o finalizar el ayuno.
+(1.2)
+
