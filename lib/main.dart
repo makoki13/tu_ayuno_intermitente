@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -37,13 +37,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Duration _elapsedTime = Duration.zero;
+  DateTime? _ultimoCambioTimestamp;
   Timer? _timer;
   EstadoAyuno _estadoActual = EstadoAyuno.none;
 
   // Claves para SharedPreferences
   static const String _prefsKeyEstado = 'estado_actual';
-  static const String _prefsKeyTiempo = 'tiempo_transcurrido_ms';
+  static const String _prefsKeyTimestamp = 'ultimo_cambio_timestamp';
 
   @override
   void initState() {
@@ -59,8 +59,13 @@ class _MyHomePageState extends State<MyHomePage> {
     _estadoActual = _stringToEstadoAyuno(estadoStr);
 
     // Recuperar el tiempo transcurrido en milisegundos
-    int tiempoMs = prefs.getInt(_prefsKeyTiempo) ?? 0;
-    _elapsedTime = Duration(milliseconds: tiempoMs);
+    int? timestampMs = prefs.getInt(_prefsKeyTimestamp);
+    if (timestampMs != null) {
+      _ultimoCambioTimestamp = DateTime.fromMillisecondsSinceEpoch(timestampMs);
+    } else {
+      // Si no hay timestamp guardado (primera vez), dejar _ultimoCambioTimestamp como null
+      _ultimoCambioTimestamp = null;
+    }
 
     // Si el estado era Fasting o Feeding, se debe reanudar el temporizador
     if (_estadoActual != EstadoAyuno.none) {
@@ -71,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
-   EstadoAyuno _stringToEstadoAyuno(String str) {
+  EstadoAyuno _stringToEstadoAyuno(String str) {
     switch (str) {
       case 'fasting':
         return EstadoAyuno.fasting;
@@ -99,26 +104,30 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _guardarEstadoEnSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsKeyEstado, _estadoAyunoToString(_estadoActual));
-    await prefs.setInt(_prefsKeyTiempo, _elapsedTime.inMilliseconds);
+    if (_ultimoCambioTimestamp != null) {
+      await prefs.setInt(
+        _prefsKeyTimestamp,
+        _ultimoCambioTimestamp!.millisecondsSinceEpoch,
+      );
+    } else {
+      // Si es null, lo borramos o guardamos null como 0 o no lo guardamos, dependiendo de la lógica.
+      // Es mejor borrarlo si es null para evitar inconsistencias.
+      await prefs.remove(_prefsKeyTimestamp);
+    }
   }
 
   void _startTimer() {
-    _stopTimer();
+    _stopTimer(); // Detiene cualquier temporizador anterior
 
-    /* _elapsedTime = Duration.zero;
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        _elapsedTime += Duration(seconds: 1);
-      });
-    }); */
-
-    // IMPORTANTE: No reiniciar _elapsedTime aquí, se gestiona al inicio o al confirmar acción
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        _elapsedTime += Duration(seconds: 1);
-      });
-
-      _guardarEstadoEnSharedPreferences(); //Cada segundo
+      // No es necesario setState aquí solo para guardar, pero sí para actualizar el display
+      // Calculamos el tiempo transcurrido desde _ultimoCambioTimestamp
+      // Solo actualizamos la UI si hay un timestamp válido
+      if (_ultimoCambioTimestamp != null) {
+        setState(() {
+          // _elapsedTime calculado dinámicamente
+        });
+      }
     });
   }
 
@@ -138,26 +147,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Función auxiliar para encapsular la lógica de inicio de Fasting
   void _realizarStartFasting() {
-    _elapsedTime = Duration.zero; // Reiniciar tiempo al iniciar Fasting
+    _ultimoCambioTimestamp = DateTime.now(); // Registrar la fecha/hora actual
 
     _startTimer();
     setState(() {
       _estadoActual = EstadoAyuno.fasting;
     });
 
-    //_guardarEstadoEnSharedPreferences(); // Guardar estado
+    _guardarEstadoEnSharedPreferences(); // Guardar estado
   }
 
   // Función auxiliar para encapsular la lógica de inicio de Feeding
   void _realizarStartFeeding() {
-    _elapsedTime = Duration.zero; // Reiniciar tiempo al iniciar Feeding
+    _ultimoCambioTimestamp = DateTime.now(); // Registrar la fecha/hora actual
 
     _startTimer();
     setState(() {
       _estadoActual = EstadoAyuno.feeding;
     });
 
-    //_guardarEstadoEnSharedPreferences(); // Guardar estado
+    _guardarEstadoEnSharedPreferences(); // Guardar estado
   }
 
   // Función para mostrar el diálogo de confirmación
@@ -201,6 +210,15 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       },
     );
+  }
+
+  Duration get _elapsedTime {
+    if (_ultimoCambioTimestamp != null && _estadoActual != EstadoAyuno.none) {
+      return DateTime.now().difference(_ultimoCambioTimestamp!);
+    } else {
+      // Si no hay timestamp o el estado es 'none', devolver Duration.zero
+      return Duration.zero;
+    }
   }
 
   String _formatDuration(Duration duration) {
