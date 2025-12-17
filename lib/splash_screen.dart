@@ -11,7 +11,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   // Controlador de animación
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -22,7 +23,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     // Inicializar el controlador de animación
     // Duración total de la animación de entrada: 1 segundo
-    _controller = AnimationController(vsync: this, duration: Duration(seconds: 1));
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    );
 
     // Crear la animación de opacidad (de 0.0 a 1.0)
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
@@ -35,7 +39,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       // Navegar a la pantalla principal y reemplazar esta pantalla
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MyHomePage(title: 'Tu Ayuno Intermitente')),
+        MaterialPageRoute(
+          builder: (context) => MyHomePage(title: 'Mi Ayuno Intermitente'),
+        ),
       );
     });
   }
@@ -64,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
               // Texto principal del Splash
               Text(
-                'Tu Ayuno\nIntermitente',
+                'Mi Ayuno\nIntermitente',
                 textAlign: TextAlign.center, // Centrar el texto multilínea
                 style: TextStyle(
                   fontSize: 32, // Tamaño de fuente grande
@@ -73,7 +79,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ),
               ),
               SizedBox(height: 20), // Espacio debajo del texto
-              CircularProgressIndicator( // Indicador opcional de carga
+              CircularProgressIndicator(
+                // Indicador opcional de carga
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
               ),
             ],

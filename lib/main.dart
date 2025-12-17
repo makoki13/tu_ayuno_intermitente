@@ -14,12 +14,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tu Ayuno Intermitente',
+      title: 'Mi Ayuno Intermitente',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      //home: MyHomePage(title: 'Tu Ayuno Intermitente'),
+      //home: MyHomePage(title: 'Mi Ayuno Intermitente'),
       home: SplashScreen(),
     );
   }
