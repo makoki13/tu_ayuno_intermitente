@@ -4,6 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:mi_ayuno_intermitente/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:mi_ayuno_intermitente/pages/ayuda.dart';
+import 'package:mi_ayuno_intermitente/pages/configuracion.dart';
+import 'package:mi_ayuno_intermitente/pages/historico.dart';
+
+// Definición del enum para los estados de la aplicación
+enum EstadoAyuno { fasting, feeding, none }
+
 void main() {
   runApp(MyApp());
 }
@@ -24,9 +31,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// Definición del enum para los estados de la aplicación
-enum EstadoAyuno { fasting, feeding, none }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -333,6 +337,26 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  // FUNCIÓN PARA NAVEGAR A OTRAS PÁGINAS DESDE LA BARRA
+  void _irAPagina(Widget pagina) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => pagina));
+  }
+
+  // FUNCIÓN PARA MANEJAR LA SELECCIÓN DE LA BARRA
+  void _onItemTapped(int index) {
+    switch (index) {
+      case 0: // Ayuda
+        _irAPagina(AyudaPage());
+        break;
+      case 1: // Configuración
+        _irAPagina(ConfiguracionPage());
+        break;
+      case 2: // Histórico
+        _irAPagina(HistoricoPage());
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -430,6 +454,18 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
+
+      bottomNavigationBar: BottomNavigationBar( // Barra de navegación inferior
+        type: BottomNavigationBarType.fixed,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.help), label: 'Ayuda'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Configuración'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Histórico'),
+        ],
+        currentIndex: 0, // Siempre se muestra como seleccionado el índice 0 (cronómetro)
+        onTap: _onItemTapped, // Manejar la pulsación
+      ),
+
     );
   }
 }
