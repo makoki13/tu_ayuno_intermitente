@@ -47,6 +47,15 @@ class _MyHomePageState extends State<MyHomePage> {
   static const String _prefsKeyEstado = 'estado_actual';
   static const String _prefsKeyTimestamp = 'ultimo_cambio_timestamp';
 
+  // --- OBJETIVO ---
+  static const Duration _objetivoFeeding = Duration(
+    hours: 8,
+  ); // Constante de objetivo
+  // El objetivo de ayuno es el tiempo restante en un día
+  // Cambiamos 'const' por 'final'
+  static final Duration _objetivoFasting =
+      Duration(hours: 24) - _objetivoFeeding; // 24 - 8 = 16 horas
+
   @override
   void initState() {
     super.initState();
@@ -259,6 +268,36 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  // --- NUEVA FUNCIÓN: Calcular tiempo restante para el objetivo actual (Feeding o Fasting) ---
+  String _getTiempoRestanteObjetivo() {
+    if (_estadoActual == EstadoAyuno.none || _ultimoCambioTimestamp == null) {
+      // Si no hay estado o no hay timestamp, no mostrar tiempo restante
+      return ''; // O un mensaje como "No activo"
+    }
+
+    Duration tiempoTranscurrido = DateTime.now().difference(
+      _ultimoCambioTimestamp!,
+    );
+    Duration objetivoActual = _estadoActual == EstadoAyuno.feeding
+        ? _objetivoFeeding
+        : _objetivoFasting;
+    Duration tiempoRestante = objetivoActual - tiempoTranscurrido;
+
+    if (tiempoRestante.isNegative) {
+      return 'Tiempo superado';
+    } else {
+      // Formatear la duración restante como HH:MM
+      int horas = tiempoRestante.inHours;
+      int minutos = tiempoRestante.inMinutes.remainder(60);
+      String horasStr = horas.toString().padLeft(2, '0');
+      String minutosStr = minutos.toString().padLeft(2, '0');
+      String estadoStr = _estadoActual == EstadoAyuno.feeding
+          ? 'alimentación'
+          : 'ayuno';
+      return 'Faltan $horasStr:$minutosStr horas para $estadoStr';
+    }
+  }
+
   Duration get _elapsedTime {
     if (_ultimoCambioTimestamp != null && _estadoActual != EstadoAyuno.none) {
       return DateTime.now().difference(_ultimoCambioTimestamp!);
@@ -334,6 +373,20 @@ class _MyHomePageState extends State<MyHomePage> {
                 // fontWeight: FontWeight.w600, // Grosor de la fuente
               ),
             ),
+            // --- NUEVO WIDGET: Mostrar tiempo restante para el objetivo ---
+            // Mostrar solo en modo Feeding o Fasting
+            if (_estadoActual != EstadoAyuno.none)
+              Padding(
+                padding: const EdgeInsets.all(16.0), // Espacio alrededor
+                child: Text(
+                  _getTiempoRestanteObjetivo(), // Llama a la nueva función
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    // Puedes usar otro estilo si prefieres
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             SizedBox(height: 40),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
