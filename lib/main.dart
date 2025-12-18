@@ -292,8 +292,8 @@ class _MyHomePageState extends State<MyHomePage> {
       String horasStr = horas.toString().padLeft(2, '0');
       String minutosStr = minutos.toString().padLeft(2, '0');
       String estadoStr = _estadoActual == EstadoAyuno.feeding
-          ? 'alimentación'
-          : 'ayuno';
+          ? 'ayuno'
+          : 'alimentación';
       return 'Faltan $horasStr:$minutosStr horas para $estadoStr';
     }
   }
@@ -369,9 +369,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 fontSize: 24, // Tamaño de fuente personalizado
                 fontStyle: FontStyle.italic, // Estilo de fuente en cursiva
                 // Puedes añadir otras propiedades aquí también
-                // color: Colors.orange, // Cambiar color si se desea
-                // fontWeight: FontWeight.w600, // Grosor de la fuente
+                color: Colors.brown, // Cambiar color si se desea
+                fontWeight: FontWeight.w600, // Grosor de la fuente
               ),
+              textAlign: TextAlign.center,
             ),
             // --- NUEVO WIDGET: Mostrar tiempo restante para el objetivo ---
             // Mostrar solo en modo Feeding o Fasting
@@ -382,9 +383,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   _getTiempoRestanteObjetivo(), // Llama a la nueva función
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     // Puedes usar otro estilo si prefieres
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                    //fontSize: 18,
+                    //fontWeight: FontWeight.w500,
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             SizedBox(height: 40),

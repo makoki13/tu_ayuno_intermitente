@@ -1,5 +1,5 @@
 * UI Mejorada: Diseño más pulido o gráficos.
-* Metas: Permitir al usuario configurar duraciones objetivo.
+* Metas: Poner duraciones objetivo.
 (0.3)
 *   Historial: Almacenar sesiones de ayuno/comida pasadas.
 *   Añadir botonera inferior para Historial y futuras opciones.
