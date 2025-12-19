@@ -50,20 +50,66 @@ class _MyHomePageState extends State<MyHomePage> {
   // Claves para SharedPreferences
   static const String _prefsKeyEstado = 'estado_actual';
   static const String _prefsKeyTimestamp = 'ultimo_cambio_timestamp';
+  static const String _prefsKeyHorasAlimentacion = 'horas_alimentacion';
+
+  int _horasAlimentacionConfiguradas = 8; // Valor por defecto temporal
 
   // --- OBJETIVO ---
-  static const Duration _objetivoFeeding = Duration(
+  /* static const Duration _objetivoFeeding = Duration(
     hours: 8,
   ); // Constante de objetivo
   // El objetivo de ayuno es el tiempo restante en un día
   // Cambiamos 'const' por 'final'
   static final Duration _objetivoFasting =
-      Duration(hours: 24) - _objetivoFeeding; // 24 - 8 = 16 horas
+      Duration(hours: 24) - _objetivoFeeding; // 24 - 8 = 16 horas */
+  Duration _objetivoFeeding = Duration(
+    hours: 8,
+  ); // Inicializado con valor por defecto, se actualizará
+  Duration _objetivoFasting = Duration(
+    hours: 16,
+  ); // Inicializado con valor por defecto, se actualizará
 
   @override
   void initState() {
     super.initState();
-    _cargarEstadoDesdeSharedPreferences(); // Cargar estado al iniciar
+    //_cargarEstadoDesdeSharedPreferences(); // Cargar estado al iniciar
+    _cargarHorasAlimentacionConfiguradas().then((_) {
+      // --- ACTUALIZAR OBJETIVOS DESPUÉS DE CARGAR LAS HORAS ---
+      _actualizarObjetivos();
+      // --- LUEGO CARGAR EL ESTADO DEL CRONÓMETRO ---
+      _cargarEstadoDesdeSharedPreferences();
+    });
+  }
+
+  // --- FUNCIÓN PARA CARGAR LAS HORAS DESDE SHARED PREFERENCES ---
+  Future<void> _cargarHorasAlimentacionConfiguradas() async {
+    /* final prefs = await SharedPreferences.getInstance();
+    int horas =
+        prefs.getInt(_prefsKeyHorasAlimentacion) ?? 8; // Valor por defecto 8
+    //int horas = 8; */
+
+    final prefs = await SharedPreferences.getInstance();
+    String? horasStr = prefs.getString(_prefsKeyHorasAlimentacion);
+    int horas = 8; // Valor por defecto
+    if (horasStr != null) {
+      int? horasParsed = int.tryParse(horasStr);
+      if (horasParsed != null && horasParsed >= 0 && horasParsed <= 24) {
+        horas = horasParsed;
+      }
+      // Si la conversión falla o el valor no es válido, se mantiene el valor por defecto (8)
+    }
+
+    setState(() {
+      _horasAlimentacionConfiguradas = horas;
+    });
+  }
+
+  // --- FUNCIÓN PARA ACTUALIZAR LOS OBJETIVOS CON BASE EN LAS HORAS CARGADAS ---
+  void _actualizarObjetivos() {
+    setState(() {
+      _objetivoFeeding = Duration(hours: _horasAlimentacionConfiguradas);
+      _objetivoFasting = Duration(hours: 24) - _objetivoFeeding;
+    });
   }
 
   Future<void> _cargarEstadoDesdeSharedPreferences() async {
@@ -455,17 +501,24 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
 
-      bottomNavigationBar: BottomNavigationBar( // Barra de navegación inferior
+      bottomNavigationBar: BottomNavigationBar(
+        // Barra de navegación inferior
         type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.help), label: 'Ayuda'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Configuración'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Histórico'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Configuración',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Histórico',
+          ),
         ],
-        currentIndex: 0, // Siempre se muestra como seleccionado el índice 0 (cronómetro)
+        currentIndex:
+            0, // Siempre se muestra como seleccionado el índice 0 (cronómetro)
         onTap: _onItemTapped, // Manejar la pulsación
       ),
-
     );
   }
 }

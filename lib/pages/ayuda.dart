@@ -48,7 +48,8 @@ class AyudaPage extends StatelessWidget {
                     ' Además indica cuánto tiempo falta para que tengas que pasar al otro estado.',
               ), // Texto normal
               TextSpan(text: '\n\n'),
-              TextSpan(text: ' Las opciones del menú inferior son.'),
+
+              TextSpan(text: '· Las opciones del menú inferior son.'),
               TextSpan(text: '\n'),
               TextSpan(text: ' El botón "'),
               TextSpan(
@@ -79,6 +80,36 @@ class AyudaPage extends StatelessWidget {
                 ),
               ),
               TextSpan(text: '": Reinicia la aplicación'),
+
+              TextSpan(text: '\n\n'),
+              TextSpan(text: '· Las opciones de configuración son.'),
+              TextSpan(text: '\n'),
+              TextSpan(
+                text: 'Tema Oscuro',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepOrange,
+                ),
+              ),
+              TextSpan(text: ': Conmute entre un tema oscuro o claro'),
+              TextSpan(text: '\n'),
+              TextSpan(
+                text: 'Horas de alimentación',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepOrange,
+                ),
+              ),
+              TextSpan(
+                text:
+                    ': El periodo de tiempo en horas en las que se va a alimentar',
+              ),
+
+              TextSpan(text: '\n\n'),
+              TextSpan(
+                text:
+                    '· El historial nos muestra cuanto tiempo hemos estado en cada estado.',
+              ),
             ],
           ),
         ),
