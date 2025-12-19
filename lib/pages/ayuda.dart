@@ -58,7 +58,27 @@ class AyudaPage extends StatelessWidget {
                   color: Colors.deepOrange,
                 ),
               ),
-              TextSpan(text: '":'),
+              TextSpan(text: '": Comienza el periodo de ayuno'),
+              TextSpan(text: '\n'),
+              TextSpan(text: ' El botón "'),
+              TextSpan(
+                text: 'Start Feeding',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepOrange,
+                ),
+              ),
+              TextSpan(text: '": Comienza el periodo de alimentación'),
+              TextSpan(text: '\n'),
+              TextSpan(text: ' El botón "'),
+              TextSpan(
+                text: 'Reset',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepOrange,
+                ),
+              ),
+              TextSpan(text: '": Reinicia la aplicación'),
             ],
           ),
         ),
