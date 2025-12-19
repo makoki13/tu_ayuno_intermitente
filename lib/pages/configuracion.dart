@@ -67,7 +67,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               children: [
                 Text(
                   'Tema Oscuro:',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.displayLarge?.copyWith(fontSize: 22),
                 ),
                 Spacer(), // Empuja el Switch hacia la derecha
                 Switch(
@@ -89,7 +91,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               children: [
                 Text(
                   'Horas de alimentación:',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.displayLarge?.copyWith(fontSize: 18),
                 ),
                 Spacer(), // Empuja el TextField hacia la derecha
                 SizedBox(
