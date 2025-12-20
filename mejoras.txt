@@ -1,10 +1,10 @@
-(0.3) <-----------
-*   UI Mejorada: Diseño más pulido o gráficos.
+(0.3) 
+X*   UI Mejorada: Diseño más pulido o gráficos.
 
-(0.4)
+(0.4) <-----------
 *   Historial: Almacenar sesiones de ayuno/comida pasadas.
-*   Añadir botonera inferior para Historial y futuras opciones.
-*   Metas: Poner duraciones objetivo. TODO: Reiniciar los del main.dart cuando se cambia
+X   Añadir botonera inferior para Historial y futuras opciones.
+X   Metas: Poner duraciones objetivo. TODO: Reiniciar los del main.dart cuando se cambia
 *   Conmutar tema oscuro / claro
 
 (1.0)
