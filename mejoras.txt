@@ -6,6 +6,7 @@ X*   UI Mejorada: Diseño más pulido o gráficos.
 X   Añadir botonera inferior para Historial y futuras opciones.
 X   Metas: Poner duraciones objetivo. TODO: Reiniciar los del main.dart cuando se cambia
 *   Conmutar tema oscuro / claro
+*   Modo automático
 
 (1.0)
 *   Notificaciones: Recordatorios para iniciar o finalizar el ayuno.

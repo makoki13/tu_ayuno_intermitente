@@ -12,6 +12,7 @@ class ConfiguracionPage extends StatefulWidget {
 class _ConfiguracionPageState extends State<ConfiguracionPage> {
   // Estado para el conmutador de tema
   bool _temaOscuroSeleccionado = false; // Valor inicial
+  bool _cambioAutomaticoSeleccionado = false; // Valor inicial
 
   // Estado para las horas de alimentación
   String _horasAlimentacion = '12'; // Valor inicial
@@ -19,16 +20,38 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   late TextEditingController _horasController;
 
   static const String _prefsKeyHorasAlimentacion = 'horas_alimentacion';
+  static const String _prefsKeyCambioAutomatico = 'cambio_automatico';
 
   @override
   void initState() {
     super.initState();
     // --- INICIALIZAR EL CONTROLADOR AQUÍ ---
-    _cargarHorasAlimentacion();
+    _cargarPreferencias();
     //_horasController = TextEditingController(text: _horasAlimentacion);
   }
 
-  Future<void> _cargarHorasAlimentacion() async {
+  Future<void> _cargarPreferencias() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Cargar horas de alimentación
+    String horasGuardadas =
+        prefs.getString(_prefsKeyHorasAlimentacion) ??
+        '12'; // Valor por defecto '12'
+
+    // Cargar cambio automático
+    bool cambioAutomaticoGuardado =
+        prefs.getBool(_prefsKeyCambioAutomatico) ??
+        false; // Valor por defecto false
+
+    setState(() {
+      _horasAlimentacion = horasGuardadas;
+      _cambioAutomaticoSeleccionado = cambioAutomaticoGuardado;
+      // Inicializar el controlador con el valor cargado
+      _horasController = TextEditingController(text: _horasAlimentacion);
+    });
+  }
+
+  /* Future<void> _cargarHorasAlimentacion() async {
     final prefs = await SharedPreferences.getInstance();
     String horasGuardadas =
         prefs.getString(_prefsKeyHorasAlimentacion) ??
@@ -39,10 +62,15 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
       _horasController = TextEditingController(text: _horasAlimentacion);
     });
   }
-
+ */
   Future<void> _guardarHorasAlimentacion(String horas) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsKeyHorasAlimentacion, horas);
+  }
+
+  Future<void> _guardarCambioAutomatico(bool valor) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyCambioAutomatico, valor);
   }
 
   @override
@@ -84,6 +112,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 ),
               ],
             ),
+
             SizedBox(height: 24), // Espacio entre apartados
             // Título del segundo apartado
             Row(
@@ -190,6 +219,30 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 ),
               ],
             ),
+
+            SizedBox(height: 24),
+
+            Row(
+              children: [
+                Text(
+                  'Cambio automático:',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.displayLarge?.copyWith(fontSize: 22),
+                ),
+                Spacer(), // Empuja el Switch hacia la derecha
+                Switch(
+                  value: _cambioAutomaticoSeleccionado,
+                  onChanged: (bool newValue) async {
+                    setState(() {
+                      _cambioAutomaticoSeleccionado = newValue;
+                    });
+                    await _guardarCambioAutomatico(newValue);
+                  },
+                ),
+              ],
+            ),
+
             // Opcional: Mostrar mensaje de error si el valor no es válido
             if (_horasAlimentacion.isNotEmpty)
               if (int.tryParse(_horasAlimentacion) == null ||
