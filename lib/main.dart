@@ -45,14 +45,17 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   DateTime? _ultimoCambioTimestamp;
   Timer? _timer;
+  Timer? _autoChangeTimer; // Timer para la comprobación automática
   EstadoAyuno _estadoActual = EstadoAyuno.none;
 
   // Claves para SharedPreferences
   static const String _prefsKeyEstado = 'estado_actual';
   static const String _prefsKeyTimestamp = 'ultimo_cambio_timestamp';
   static const String _prefsKeyHorasAlimentacion = 'horas_alimentacion';
+  static const String _prefsKeyCambioAutomatico = 'cambio_automatico';
 
   int _horasAlimentacionConfiguradas = 8; // Valor por defecto temporal
+  bool _cambioAutomaticoHabilitado = false; // Valor para cambio automático
 
   // --- OBJETIVO ---
   /* static const Duration _objetivoFeeding = Duration(
@@ -73,22 +76,21 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     //_cargarEstadoDesdeSharedPreferences(); // Cargar estado al iniciar
-    _cargarHorasAlimentacionConfiguradas().then((_) {
+    _cargarPreferencias().then((_) {
       // --- ACTUALIZAR OBJETIVOS DESPUÉS DE CARGAR LAS HORAS ---
       _actualizarObjetivos();
       // --- LUEGO CARGAR EL ESTADO DEL CRONÓMETRO ---
       _cargarEstadoDesdeSharedPreferences();
+      // --- INICIAR EL TEMPORIZADOR DE CAMBIO AUTOMÁTICO ---
+      _iniciarAutoChangeTimer();
     });
   }
 
-  // --- FUNCIÓN PARA CARGAR LAS HORAS DESDE SHARED PREFERENCES ---
-  Future<void> _cargarHorasAlimentacionConfiguradas() async {
-    /* final prefs = await SharedPreferences.getInstance();
-    int horas =
-        prefs.getInt(_prefsKeyHorasAlimentacion) ?? 8; // Valor por defecto 8
-    //int horas = 8; */
-
+  // --- FUNCIÓN PARA CARGAR LAS PREFERENCIAS DESDE SHARED PREFERENCES ---
+  Future<void> _cargarPreferencias() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Cargar horas de alimentación
     String? horasStr = prefs.getString(_prefsKeyHorasAlimentacion);
     int horas = 8; // Valor por defecto
     if (horasStr != null) {
@@ -99,8 +101,12 @@ class _MyHomePageState extends State<MyHomePage> {
       // Si la conversión falla o el valor no es válido, se mantiene el valor por defecto (8)
     }
 
+    // Cargar cambio automático
+    bool cambioAutomatico = prefs.getBool(_prefsKeyCambioAutomatico) ?? false;
+
     setState(() {
       _horasAlimentacionConfiguradas = horas;
+      _cambioAutomaticoHabilitado = cambioAutomatico;
     });
   }
 
@@ -110,6 +116,77 @@ class _MyHomePageState extends State<MyHomePage> {
       _objetivoFeeding = Duration(hours: _horasAlimentacionConfiguradas);
       _objetivoFasting = Duration(hours: 24) - _objetivoFeeding;
     });
+
+    // Verificar si hay que hacer un cambio automático después de actualizar objetivos
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verificarCambioAutomatico();
+    });
+  }
+
+  // --- MÉTODO PARA INICIAR EL TEMPORIZADOR DE CAMBIO AUTOMÁTICO ---
+  void _iniciarAutoChangeTimer() {
+    // Cancelar cualquier timer anterior
+    _detenerAutoChangeTimer();
+
+    // Iniciar un nuevo timer que verifica cada minuto
+    _autoChangeTimer = Timer.periodic(Duration(minutes: 1), (timer) async {
+      // Cargar la configuración actual de cambio automático periódicamente
+      await _cargarCambioAutomaticoSetting();
+      _verificarCambioAutomatico();
+    });
+  }
+
+  // --- MÉTODO PARA CARGAR SÓLO LA CONFIGURACIÓN DE CAMBIO AUTOMÁTICO ---
+  Future<void> _cargarCambioAutomaticoSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool cambioAutomatico = prefs.getBool(_prefsKeyCambioAutomatico) ?? false;
+
+    setState(() {
+      _cambioAutomaticoHabilitado = cambioAutomatico;
+    });
+  }
+
+  // --- MÉTODO PARA DETENER EL TEMPORIZADOR DE CAMBIO AUTOMÁTICO ---
+  void _detenerAutoChangeTimer() {
+    if (_autoChangeTimer != null && _autoChangeTimer!.isActive) {
+      _autoChangeTimer!.cancel();
+    }
+  }
+
+  // --- MÉTODO PARA VERIFICAR SI ES NECESARIO CAMBIAR DE ESTADO AUTOMÁTICAMENTE ---
+  void _verificarCambioAutomatico() {
+    // Si el estado actual es 'none' o el cambio automático está deshabilitado, no hacer nada
+    if (_estadoActual == EstadoAyuno.none || !_cambioAutomaticoHabilitado) {
+      return;
+    }
+
+    // Verificar si ha pasado el tiempo objetivo
+    if (_ultimoCambioTimestamp != null) {
+      Duration tiempoTranscurrido = DateTime.now().difference(_ultimoCambioTimestamp!);
+
+      bool debeCambiar = false;
+
+      if (_estadoActual == EstadoAyuno.feeding) {
+        // Si estamos en estado feeding, cambiar si hemos superado el objetivo de alimentación
+        if (tiempoTranscurrido > _objetivoFeeding) {
+          debeCambiar = true;
+        }
+      } else if (_estadoActual == EstadoAyuno.fasting) {
+        // Si estamos en estado fasting, cambiar si hemos alcanzado o superado el objetivo de ayuno
+        if (tiempoTranscurrido >= _objetivoFasting) {
+          debeCambiar = true;
+        }
+      }
+
+      if (debeCambiar) {
+        // Cambiar de estado
+        if (_estadoActual == EstadoAyuno.fasting) {
+          _realizarStartFeeding();
+        } else if (_estadoActual == EstadoAyuno.feeding) {
+          _realizarStartFasting();
+        }
+      }
+    }
   }
 
   Future<void> _cargarEstadoDesdeSharedPreferences() async {
@@ -135,6 +212,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Llama a setState para actualizar la UI con los valores cargados
     setState(() {});
+
+    // Verificar inmediatamente si hay que hacer un cambio automático al cargar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verificarCambioAutomatico();
+    });
   }
 
   EstadoAyuno _stringToEstadoAyuno(String str) {
@@ -348,6 +430,11 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // --- NUEVA FUNCIÓN: Obtener texto de modo (manual o automático) ---
+  String _getModoTexto() {
+    return _cambioAutomaticoHabilitado ? 'cambio automático' : 'cambio manual';
+  }
+
   Duration get _elapsedTime {
     if (_ultimoCambioTimestamp != null && _estadoActual != EstadoAyuno.none) {
       return DateTime.now().difference(_ultimoCambioTimestamp!);
@@ -379,6 +466,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _stopTimer();
+    _detenerAutoChangeTimer(); // Detener el timer de cambio automático
     _guardarEstadoEnSharedPreferences(); // Tal vez no sea necesario de momento si se guarda cada segundo
     super.dispose();
   }
@@ -447,19 +535,32 @@ class _MyHomePageState extends State<MyHomePage> {
             // --- NUEVO WIDGET: Mostrar tiempo restante para el objetivo ---
             // Mostrar solo en modo Feeding o Fasting
             if (_estadoActual != EstadoAyuno.none)
-              Padding(
-                padding: const EdgeInsets.all(16.0), // Espacio alrededor
-                child: Text(
-                  _getTiempoRestanteObjetivo(), // Llama a la nueva función
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    // Puedes usar otro estilo si prefieres
-                    //fontSize: 18,
-                    //fontWeight: FontWeight.w500,
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0), // Espacio alrededor
+                    child: Text(
+                      _getTiempoRestanteObjetivo(), // Llama a la nueva función
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        // Puedes usar otro estilo si prefieres
+                        //fontSize: 18,
+                        //fontWeight: FontWeight.w500,
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  Text(
+                    _getModoTexto(), // Texto que indica si es manual o automático
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             SizedBox(height: 40),
             Row(

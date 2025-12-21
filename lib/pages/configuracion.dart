@@ -12,7 +12,7 @@ class ConfiguracionPage extends StatefulWidget {
 class _ConfiguracionPageState extends State<ConfiguracionPage> {
   // Estado para el conmutador de tema
   bool _temaOscuroSeleccionado = false; // Valor inicial
-  bool _cambioAutomaticoSeleccionado = false; // Valor inicial
+  bool _cambioAutomaticoSeleccionado = true; // Valor inicial
 
   // Estado para las horas de alimentación
   String _horasAlimentacion = '12'; // Valor inicial
@@ -41,7 +41,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     // Cargar cambio automático
     bool cambioAutomaticoGuardado =
         prefs.getBool(_prefsKeyCambioAutomatico) ??
-        false; // Valor por defecto false
+        true; // Valor por defecto false
 
     setState(() {
       _horasAlimentacion = horasGuardadas;
