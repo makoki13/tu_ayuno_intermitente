@@ -15,3 +15,6 @@ X   Añadir botonera inferior para Historial y futuras opciones.
 *   Logros
 *   En "Configuracion": Añadir "Resetear histórico". Con confirmación.
 
+CAMBIOS EN INTERFAZ:
+* Un mejor icono
+* Crear un tema propio 
