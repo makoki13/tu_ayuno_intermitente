@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mi_ayuno_intermitente/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mi_ayuno_intermitente/notification_service.dart';
 
 import 'package:mi_ayuno_intermitente/pages/ayuda.dart';
 import 'package:mi_ayuno_intermitente/pages/configuracion.dart';
@@ -46,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   DateTime? _ultimoCambioTimestamp;
   Timer? _timer;
   Timer? _autoChangeTimer; // Timer para la comprobación automática
+  Timer? _warningTimer; // Timer para la verificación de advertencia de 60 minutos
   EstadoAyuno _estadoActual = EstadoAyuno.none;
 
   // Claves para SharedPreferences
@@ -72,10 +74,18 @@ class _MyHomePageState extends State<MyHomePage> {
     hours: 16,
   ); // Inicializado con valor por defecto, se actualizará
 
+  // Para controlar la notificación de advertencia
+  bool _warningNotificationShown = false;
+  static const int _warningNotificationId = 1001;
+
   @override
   void initState() {
     super.initState();
     //_cargarEstadoDesdeSharedPreferences(); // Cargar estado al iniciar
+
+    // Initialize notification service
+    NotificationService().initialize();
+
     _cargarPreferencias().then((_) {
       // --- ACTUALIZAR OBJETIVOS DESPUÉS DE CARGAR LAS HORAS ---
       _actualizarObjetivos();
@@ -83,6 +93,8 @@ class _MyHomePageState extends State<MyHomePage> {
       _cargarEstadoDesdeSharedPreferences();
       // --- INICIAR EL TEMPORIZADOR DE CAMBIO AUTOMÁTICO ---
       _iniciarAutoChangeTimer();
+      // --- INICIAR EL TEMPORIZADOR DE ADVERTENCIA ---
+      _iniciarWarningTimer();
     });
   }
 
@@ -116,6 +128,9 @@ class _MyHomePageState extends State<MyHomePage> {
       _objetivoFeeding = Duration(hours: _horasAlimentacionConfiguradas);
       _objetivoFasting = Duration(hours: 24) - _objetivoFeeding;
     });
+
+    // Reiniciar la notificación de advertencia cuando se actualizan los objetivos
+    _warningNotificationShown = false;
 
     // Verificar si hay que hacer un cambio automático después de actualizar objetivos
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -153,6 +168,74 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // --- MÉTODO PARA INICIAR EL TEMPORIZADOR DE ADVERTENCIA ---
+  void _iniciarWarningTimer() {
+    // Cancelar cualquier timer anterior
+    _detenerWarningTimer();
+
+    // Iniciar un nuevo timer que verifica cada minuto
+    _warningTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+      _verificarAdvertenciaCambio();
+    });
+  }
+
+  // --- MÉTODO PARA DETENER EL TEMPORIZADOR DE ADVERTENCIA ---
+  void _detenerWarningTimer() {
+    if (_warningTimer != null && _warningTimer!.isActive) {
+      _warningTimer!.cancel();
+    }
+  }
+
+  // --- MÉTODO PARA VERIFICAR SI ES NECESARIO MOSTRAR UNA ADVERTENCIA DE CAMBIO ---
+  void _verificarAdvertenciaCambio() async {
+    // Si el estado actual es 'none', no hacer nada
+    if (_estadoActual == EstadoAyuno.none || _ultimoCambioTimestamp == null) {
+      return;
+    }
+
+    // Calcular el tiempo transcurrido
+    Duration tiempoTranscurrido = DateTime.now().difference(_ultimoCambioTimestamp!);
+
+    // Determinar el objetivo actual según el estado
+    Duration objetivoActual = _estadoActual == EstadoAyuno.feeding ? _objetivoFeeding : _objetivoFasting;
+
+    // Calcular el tiempo restante para el cambio
+    Duration tiempoRestante = objetivoActual - tiempoTranscurrido;
+
+    // Verificar si faltan 60 minutos o menos para el cambio
+    if (tiempoRestante.inMinutes <= 60 &&
+        tiempoRestante.inMinutes > 0 &&
+        !_warningNotificationShown) {
+      // Mostrar notificación de advertencia
+      await _mostrarAdvertenciaCambio();
+      _warningNotificationShown = true;
+    }
+    // Reiniciar el indicador si ya pasó el tiempo de advertencia
+    else if (tiempoRestante.isNegative && _warningNotificationShown) {
+      _warningNotificationShown = false;
+    }
+  }
+
+  // --- MÉTODO PARA MOSTRAR LA ADVERTENCIA DE CAMBIO ---
+  Future<void> _mostrarAdvertenciaCambio() async {
+    String titulo = '';
+    String cuerpo = '';
+
+    if (_estadoActual == EstadoAyuno.feeding) {
+      titulo = 'Cambio a Ayuno';
+      cuerpo = 'Faltan 60 minutos para que termine el periodo de alimentación';
+    } else if (_estadoActual == EstadoAyuno.fasting) {
+      titulo = 'Cambio a Alimentación';
+      cuerpo = 'Faltan 60 minutos para que termine el periodo de ayuno';
+    }
+
+    await NotificationService().showWarningNotification(
+      title: titulo,
+      body: cuerpo,
+      id: _warningNotificationId,
+    );
+  }
+
   // --- MÉTODO PARA VERIFICAR SI ES NECESARIO CAMBIAR DE ESTADO AUTOMÁTICAMENTE ---
   void _verificarCambioAutomatico() {
     // Si el estado actual es 'none' o el cambio automático está deshabilitado, no hacer nada
@@ -162,7 +245,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Verificar si ha pasado el tiempo objetivo
     if (_ultimoCambioTimestamp != null) {
-      Duration tiempoTranscurrido = DateTime.now().difference(_ultimoCambioTimestamp!);
+      Duration tiempoTranscurrido = DateTime.now().difference(
+        _ultimoCambioTimestamp!,
+      );
 
       bool debeCambiar = false;
 
@@ -266,6 +351,9 @@ class _MyHomePageState extends State<MyHomePage> {
     _estadoActual = EstadoAyuno.none;
     _ultimoCambioTimestamp = null;
 
+    // Reiniciar la notificación de advertencia al resetear
+    _warningNotificationShown = false;
+
     // Limpiar datos persistentes
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKeyEstado);
@@ -313,6 +401,9 @@ class _MyHomePageState extends State<MyHomePage> {
       _estadoActual = EstadoAyuno.fasting;
     });
 
+    // Reiniciar la notificación de advertencia al cambiar de estado
+    _warningNotificationShown = false;
+
     _guardarEstadoEnSharedPreferences(); // Guardar estado
   }
 
@@ -324,6 +415,9 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _estadoActual = EstadoAyuno.feeding;
     });
+
+    // Reiniciar la notificación de advertencia al cambiar de estado
+    _warningNotificationShown = false;
 
     _guardarEstadoEnSharedPreferences(); // Guardar estado
   }
@@ -426,7 +520,7 @@ class _MyHomePageState extends State<MyHomePage> {
       String estadoStr = _estadoActual == EstadoAyuno.feeding
           ? 'ayuno'
           : 'alimentación';
-      return 'Faltan $horasStr:$minutosStr horas para $estadoStr';
+      return 'Faltan $horasStr:$minutosStr horas para el cambio a $estadoStr';
     }
   }
 
@@ -467,6 +561,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void dispose() {
     _stopTimer();
     _detenerAutoChangeTimer(); // Detener el timer de cambio automático
+    _detenerWarningTimer(); // Detener el timer de advertencia
     _guardarEstadoEnSharedPreferences(); // Tal vez no sea necesario de momento si se guarda cada segundo
     super.dispose();
   }
