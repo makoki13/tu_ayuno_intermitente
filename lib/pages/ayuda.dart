@@ -110,6 +110,21 @@ class AyudaPage extends StatelessWidget {
                 text:
                     '· El historial nos muestra cuanto tiempo hemos estado en cada estado.',
               ),
+              TextSpan(text: '\n\n'),
+              TextSpan(
+                text: ' El botón "',
+              ),
+              TextSpan(
+                text: 'Histórico',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepOrange,
+                ),
+              ),
+              TextSpan(
+                text: '": Muestra el historial detallado de tus sesiones de ayuno y alimentación',
+              ),
+
             ],
           ),
         ),

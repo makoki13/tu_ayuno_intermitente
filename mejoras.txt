@@ -2,14 +2,14 @@
 X*   UI Mejorada: Diseño más pulido o gráficos.
 
 (0.4) <-----------
-*   Historial: Almacenar sesiones de ayuno/comida pasadas.
+X   Historial: Almacenar sesiones de ayuno/comida pasadas.
 X   Añadir botonera inferior para Historial y futuras opciones.
 !   Metas: Poner duraciones objetivo. TODO: Reiniciar los del main.dart cuando se cambia
 *   Conmutar tema oscuro / claro
 !   Modo automático TODO: Que cuando se cambie en la configuración se cambie en la pantalla principal.
 
 (1.0)
-*   Notificaciones: Recordatorios para iniciar o finalizar el ayuno.
+X   Notificaciones: Recordatorios para iniciar o finalizar el ayuno.
 
 (1.1)
 *   Logros

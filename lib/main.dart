@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:mi_ayuno_intermitente/splash_screen.dart';
@@ -78,6 +79,10 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _warningNotificationShown = false;
   static const int _warningNotificationId = 1001;
 
+  // Para el sistema de logging de sesiones
+  static const String _prefsKeySesiones = 'sesiones_registro';
+  List<Map<String, dynamic>> _registroSesiones = [];
+
   @override
   void initState() {
     super.initState();
@@ -87,6 +92,8 @@ class _MyHomePageState extends State<MyHomePage> {
     NotificationService().initialize();
 
     _cargarPreferencias().then((_) {
+      // --- CARGAR EL REGISTRO DE SESIONES ---
+      _cargarRegistroSesiones();
       // --- ACTUALIZAR OBJETIVOS DESPUÉS DE CARGAR LAS HORAS ---
       _actualizarObjetivos();
       // --- LUEGO CARGAR EL ESTADO DEL CRONÓMETRO ---
@@ -120,6 +127,43 @@ class _MyHomePageState extends State<MyHomePage> {
       _horasAlimentacionConfiguradas = horas;
       _cambioAutomaticoHabilitado = cambioAutomatico;
     });
+  }
+
+  // --- FUNCIÓN PARA CARGAR EL REGISTRO DE SESIONES ---
+  Future<void> _cargarRegistroSesiones() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sesionesJson = prefs.getStringList(_prefsKeySesiones) ?? [];
+
+    _registroSesiones = sesionesJson.map((json) {
+      Map<String, dynamic> map = Map<String, dynamic>.from(
+        Map<String, dynamic>.from(jsonDecode(json))
+      );
+      return map;
+    }).toList();
+  }
+
+  // --- FUNCIÓN PARA GUARDAR EL REGISTRO DE SESIONES ---
+  Future<void> _guardarRegistroSesiones() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sesionesJson = _registroSesiones.map((sesion) => jsonEncode(sesion)).toList();
+    await prefs.setStringList(_prefsKeySesiones, sesionesJson);
+  }
+
+  // --- FUNCIÓN PARA AGREGAR UNA NUEVA SESIÓN AL REGISTRO ---
+  Future<void> _agregarSesionAlRegistro(EstadoAyuno estado, Duration duracion, DateTime inicio, DateTime fin) async {
+    final nuevaSesion = {
+      'id': DateTime.now().millisecondsSinceEpoch, // Usar timestamp como ID único
+      'estado': _estadoAyunoToString(estado),
+      'duracion_horas': duracion.inHours,
+      'duracion_minutos': duracion.inMinutes.remainder(60),
+      'duracion_segundos': duracion.inSeconds.remainder(60),
+      'fecha_inicio': inicio.toIso8601String(),
+      'fecha_fin': fin.toIso8601String(),
+      'timestamp_registro': DateTime.now().millisecondsSinceEpoch,
+    };
+
+    _registroSesiones.add(nuevaSesion);
+    await _guardarRegistroSesiones();
   }
 
   // --- FUNCIÓN PARA ACTUALIZAR LOS OBJETIVOS CON BASE EN LAS HORAS CARGADAS ---
@@ -347,6 +391,12 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _resetearEstado() async {
     _stopTimer(); // Detener el temporizador actual
 
+    // Si hay un estado activo, registrar la sesión antes de resetear
+    if (_estadoActual != EstadoAyuno.none && _ultimoCambioTimestamp != null) {
+      Duration duracionSesion = DateTime.now().difference(_ultimoCambioTimestamp!);
+      await _agregarSesionAlRegistro(_estadoActual, duracionSesion, _ultimoCambioTimestamp!, DateTime.now());
+    }
+
     // Resetear variables locales
     _estadoActual = EstadoAyuno.none;
     _ultimoCambioTimestamp = null;
@@ -393,7 +443,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // Función auxiliar para encapsular la lógica de inicio de Fasting
-  void _realizarStartFasting() {
+  void _realizarStartFasting() async {
+    // Si hay un estado anterior activo, registrar la sesión antes de cambiar
+    if (_estadoActual != EstadoAyuno.none && _ultimoCambioTimestamp != null) {
+      Duration duracionSesion = DateTime.now().difference(_ultimoCambioTimestamp!);
+      await _agregarSesionAlRegistro(_estadoActual, duracionSesion, _ultimoCambioTimestamp!, DateTime.now());
+    }
+
     _ultimoCambioTimestamp = DateTime.now(); // Registrar la fecha/hora actual
 
     _startTimer();
@@ -408,7 +464,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // Función auxiliar para encapsular la lógica de inicio de Feeding
-  void _realizarStartFeeding() {
+  void _realizarStartFeeding() async {
+    // Si hay un estado anterior activo, registrar la sesión antes de cambiar
+    if (_estadoActual != EstadoAyuno.none && _ultimoCambioTimestamp != null) {
+      Duration duracionSesion = DateTime.now().difference(_ultimoCambioTimestamp!);
+      await _agregarSesionAlRegistro(_estadoActual, duracionSesion, _ultimoCambioTimestamp!, DateTime.now());
+    }
+
     _ultimoCambioTimestamp = DateTime.now(); // Registrar la fecha/hora actual
 
     _startTimer();
