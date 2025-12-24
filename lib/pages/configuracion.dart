@@ -21,6 +21,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
 
   static const String _prefsKeyHorasAlimentacion = 'horas_alimentacion';
   static const String _prefsKeyCambioAutomatico = 'cambio_automatico';
+  static const String _prefsKeyTemaOscuro = 'tema_oscuro';
 
   @override
   void initState() {
@@ -43,9 +44,15 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
         prefs.getBool(_prefsKeyCambioAutomatico) ??
         true; // Valor por defecto false
 
+    // Cargar tema oscuro
+    bool temaOscuroGuardado =
+        prefs.getBool(_prefsKeyTemaOscuro) ??
+        false; // Valor por defecto false
+
     setState(() {
       _horasAlimentacion = horasGuardadas;
       _cambioAutomaticoSeleccionado = cambioAutomaticoGuardado;
+      _temaOscuroSeleccionado = temaOscuroGuardado;
       // Inicializar el controlador con el valor cargado
       _horasController = TextEditingController(text: _horasAlimentacion);
     });
@@ -71,6 +78,11 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   Future<void> _guardarCambioAutomatico(bool valor) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefsKeyCambioAutomatico, valor);
+  }
+
+  Future<void> _guardarTemaOscuro(bool valor) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyTemaOscuro, valor);
   }
 
   @override
@@ -102,12 +114,11 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 Spacer(), // Empuja el Switch hacia la derecha
                 Switch(
                   value: _temaOscuroSeleccionado,
-                  onChanged: (bool newValue) {
+                  onChanged: (bool newValue) async {
                     setState(() {
                       _temaOscuroSeleccionado = newValue;
                     });
-                    // Aquí se podría guardar el valor si se implementa persistencia
-                    // y se notificaría al ThemeProvider o MaterialApp para cambiar el tema globalmente.
+                    await _guardarTemaOscuro(newValue);
                   },
                 ),
               ],

@@ -13,7 +13,6 @@ X   Notificaciones: Recordatorios para iniciar o finalizar el ayuno.
 
 (1.1)
 *   Logros
-*   En "Configuracion": Añadir "Resetear histórico". Con confirmación.
 
 CAMBIOS EN INTERFAZ:
 * Un mejor icono
