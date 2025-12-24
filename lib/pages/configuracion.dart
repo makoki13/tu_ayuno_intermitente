@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../theme_provider.dart';
 
 class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({super.key});
@@ -26,9 +28,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   @override
   void initState() {
     super.initState();
-    // --- INICIALIZAR EL CONTROLADOR AQUÍ ---
+    // Initialize controller with default value
+    _horasController = TextEditingController(text: _horasAlimentacion);
     _cargarPreferencias();
-    //_horasController = TextEditingController(text: _horasAlimentacion);
   }
 
   Future<void> _cargarPreferencias() async {
@@ -44,17 +46,21 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
         prefs.getBool(_prefsKeyCambioAutomatico) ??
         true; // Valor por defecto false
 
-    // Cargar tema oscuro
-    bool temaOscuroGuardado =
-        prefs.getBool(_prefsKeyTemaOscuro) ??
-        false; // Valor por defecto false
-
     setState(() {
       _horasAlimentacion = horasGuardadas;
       _cambioAutomaticoSeleccionado = cambioAutomaticoGuardado;
-      _temaOscuroSeleccionado = temaOscuroGuardado;
-      // Inicializar el controlador con el valor cargado
-      _horasController = TextEditingController(text: _horasAlimentacion);
+      // Actualizar el controlador con el valor cargado
+      _horasController.text = _horasAlimentacion;
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cargar el estado del tema desde el ThemeProvider
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    setState(() {
+      _temaOscuroSeleccionado = themeProvider.isDarkMode;
     });
   }
 
@@ -119,6 +125,8 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                       _temaOscuroSeleccionado = newValue;
                     });
                     await _guardarTemaOscuro(newValue);
+                    // Notify the theme provider to update the theme
+                    Provider.of<ThemeProvider>(context, listen: false).setDarkMode(newValue);
                   },
                 ),
               ],

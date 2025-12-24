@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:mi_ayuno_intermitente/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mi_ayuno_intermitente/notification_service.dart';
+import 'package:provider/provider.dart';
+import 'package:mi_ayuno_intermitente/theme_provider.dart';
 
 import 'package:mi_ayuno_intermitente/pages/ayuda.dart';
 import 'package:mi_ayuno_intermitente/pages/configuracion.dart';
@@ -22,14 +24,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mi Ayuno Intermitente',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+    return ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Mi Ayuno Intermitente',
+            theme: themeProvider.themeData,
+            debugShowCheckedModeBanner: false,
+            home: SplashScreen(),
+          );
+        },
       ),
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
     );
   }
 }
